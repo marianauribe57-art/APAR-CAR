@@ -1,4 +1,9 @@
-import { NavLink, Outlet } from "react-router";
+import { NavLink, Outlet } from 'react-router';
+
+const enlaces = [
+  { ruta: '/panel', texto: 'Panel de control' },
+  { ruta: '/estacionamientos', texto: 'Estacionamientos' },
+];
 
 function LayoutPrincipal() {
   return (
@@ -8,18 +13,19 @@ function LayoutPrincipal() {
       </header>
 
       <div className="d-flex flex-grow-1">
-        <nav className="bg-light border-end p-3" style={{ width: "220px" }}>
+        <nav
+          className="d-none d-md-block bg-light border-end p-3"
+          style={{ width: '220px' }}
+          aria-label="Menú principal"
+        >
           <ul className="nav nav-pills flex-column gap-1">
-            <li className="nav-item">
-              <NavLink to="/panel" className="nav-link">
-                Panel de control
-              </NavLink>
-            </li>
-            <li className="nav-item">
-              <NavLink to="/estacionamientos" className="nav-link">
-                Estacionamientos
-              </NavLink>
-            </li>
+            {enlaces.map((enlace) => (
+              <li className="nav-item" key={enlace.ruta}>
+                <NavLink to={enlace.ruta} className="nav-link">
+                  {enlace.texto}
+                </NavLink>
+              </li>
+            ))}
           </ul>
         </nav>
 
@@ -27,6 +33,21 @@ function LayoutPrincipal() {
           <Outlet />
         </main>
       </div>
+
+      <nav
+        className="d-md-none sticky-bottom bg-light border-top"
+        aria-label="Menú principal"
+      >
+        <ul className="nav nav-pills flex-nowrap overflow-auto gap-1 p-2">
+          {enlaces.map((enlace) => (
+            <li className="nav-item" key={enlace.ruta}>
+              <NavLink to={enlace.ruta} className="nav-link text-nowrap">
+                {enlace.texto}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+      </nav>
     </div>
   );
 }
