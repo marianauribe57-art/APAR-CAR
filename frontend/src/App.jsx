@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router';
 import LayoutPrincipal from './layouts/LayoutPrincipal';
 import Estacionamientos from './pages/Estacionamientos';
+import NoEncontrada from './pages/NoEncontrada';
 import InicioSesion from './pages/InicioSesion';
 import Panel from './pages/Panel';
 
@@ -14,6 +15,7 @@ function App() {
         <Route path="/panel" element={<Panel />} />
         <Route path="/estacionamientos" element={<Estacionamientos />} />
       </Route>
+      <Route path="*" element={<NoEncontrada />} />
     </Routes>
   );
 }
