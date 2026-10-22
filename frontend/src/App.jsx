@@ -1,25 +1,14 @@
-import { useEffect, useState } from 'react';
+import { Navigate, Route, Routes } from 'react-router';
+import InicioSesion from './pages/InicioSesion';
+import Panel from './pages/Panel';
 
 function App() {
-  const [estado, setEstado] = useState('Consultando...');
-
-useEffect(() => {
-  fetch('/api/health')
-    .then((respuesta) => {
-      if (!respuesta.ok) {
-        throw new Error(`Error HTTP ${respuesta.status}`);
-      }
-      return respuesta.json();
-    })
-    .then((datos) => setEstado(datos.status))
-    .catch(() => setEstado('Sin conexión con el servidor'));
-}, []);
-
   return (
-    <div className="container mt-5">
-      <h1 className="text-primary">APAR-CAR</h1>
-      <p>Estado del servidor: <strong>{estado}</strong></p>
-    </div>
+    <Routes>
+      <Route path="/" element={<Navigate to="/panel" replace />} />
+      <Route path="/auth" element={<InicioSesion />} />
+      <Route path="/panel" element={<Panel />} />
+    </Routes>
   );
 }
 
