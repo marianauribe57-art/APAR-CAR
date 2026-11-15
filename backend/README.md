@@ -58,6 +58,6 @@ API de APAR-CAR hecha con Node.js + Express + Prisma (PostgreSQL en Neon).
 
 ## Notas
 
-- La configuración de Prisma está en `prisma7.config.ts` (no en `prisma.config.ts`).
+- La configuración de Prisma está en `prisma.config.ts`.
   Prisma la encuentra sola, no hace falta pasar `--config`.
 - El schema está en `prisma/schema.prisma`.
