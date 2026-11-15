@@ -15,22 +15,29 @@ export function hashearContrasena(contrasena) {
 }
 
 // Bitácora: solo se inserta, nunca se actualiza (RNF-07)
-function registrarEnBitacora({ usuarioId = null, accion, detalle = {} }) {
+function registrarEnBitacora({ usuarioId = null, parqueaderoId = null, accion, detalle = {} }) {
   return prisma.bitacora.create({
-    data: { usuarioId, accion, entidad: 'Usuario', detalle },
+    data: { usuarioId, parqueaderoId, accion, entidad: 'Usuario', detalle },
   });
 }
 
 // Para el login del día 2 (HU-03)
 export async function verificarCredenciales(correo, contrasena, { ip } = {}) {
   const ahora = new Date();
-  const usuario = await prisma.usuario.findUnique({ where: { correo } });
+  const usuario = await prisma.usuario.findUnique({
+    where: { correo },
+    include: { personal: { select: { parqueaderoId: true } } },
+  });
+
+  // Clientes y correos que no existen → null (RNF-02: sale de la base, nunca del cliente)
+  const parqueaderoId = usuario?.personal?.parqueaderoId ?? null;
 
   // 1. No existe o está inactivo → la misma respuesta genérica
   if (!usuario || !usuario.activo) {
     await bcrypt.compare(contrasena, HASH_FALSO);
     await registrarEnBitacora({
       usuarioId: usuario?.id ?? null,
+      parqueaderoId,
       accion: 'LOGIN_FALLIDO',
       detalle: { correo, ip, motivo: usuario ? 'INACTIVO' : 'NO_EXISTE' },
     });
@@ -42,6 +49,7 @@ export async function verificarCredenciales(correo, contrasena, { ip } = {}) {
     const minutosRestantes = Math.ceil((usuario.bloqueadoHasta - ahora) / 60000);
     await registrarEnBitacora({
       usuarioId: usuario.id,
+      parqueaderoId,
       accion: 'LOGIN_RECHAZADO_POR_BLOQUEO',
       detalle: { ip },
     });
@@ -64,6 +72,7 @@ export async function verificarCredenciales(correo, contrasena, { ip } = {}) {
       }),
       registrarEnBitacora({
         usuarioId: usuario.id,
+        parqueaderoId,
         accion: seBloquea ? 'CUENTA_BLOQUEADA' : 'LOGIN_FALLIDO',
         detalle: { ip, intentos },
       }),
@@ -80,12 +89,12 @@ export async function verificarCredenciales(correo, contrasena, { ip } = {}) {
       where: { id: usuario.id },
       data: { intentosFallidos: 0, bloqueadoHasta: null },
     }),
-    registrarEnBitacora({ usuarioId: usuario.id, accion: 'LOGIN_EXITOSO', detalle: { ip } }),
+    registrarEnBitacora({ usuarioId: usuario.id, parqueaderoId, accion: 'LOGIN_EXITOSO', detalle: { ip } }),
   ]);
 
   return {
     ok: true,
-    usuario: { id: usuario.id, nombre: usuario.nombre, rol: usuario.rol },
+    usuario: { id: usuario.id, nombre: usuario.nombre, rol: usuario.rol, parqueaderoId },
     debeCambiarContrasena: usuario.debeCambiarContrasena,
   };
 }
