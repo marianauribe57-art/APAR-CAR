@@ -6,18 +6,312 @@ datasource db {
   provider = "postgresql"
 }
 
+// ─── Enums ───
+
 enum Rol {
   ADMINISTRADOR
   OPERARIO
   CLIENTE
 }
 
+enum EstadoAfiliacion {
+  PENDIENTE_VINCULACION
+  ACTIVA
+  INACTIVA
+}
+
+enum TipoCelda {
+  CARRO
+  MOTO
+  MIXTA
+}
+
+enum EstadoCelda {
+  LIBRE
+  OCUPADA
+}
+
+enum TipoVehiculo {
+  CARRO
+  MOTO
+}
+
+enum EstadoCodigoQr {
+  ACTIVO
+  REVOCADO
+}
+
+enum OrigenMovimiento {
+  MANUAL
+  LECTOR_QR
+}
+
+enum MedioPago {
+  EFECTIVO
+  TRANSFERENCIA
+  OTRO
+}
+
+// ─── Personas y acceso ───
+
 model Usuario {
-  id             Int      @id @default(autoincrement())
-  nombre         String
-  correo         String   @unique
-  contrasenaHash String
-  rol            Rol
-  activo         Boolean  @default(true)
-  creadoEn       DateTime @default(now())
+  id                     String           @id @default(uuid()) @db.Uuid
+  correo                 String           @unique
+  hashContrasena         String
+  nombre                 String
+  telefono               String
+  rol                    Rol              @default(CLIENTE)
+  debeCambiarContrasena  Boolean          @default(false)
+  intentosFallidos       Int              @default(0)
+  bloqueadoHasta         DateTime?        @db.Timestamptz
+  activo                 Boolean          @default(true)
+  creadoEn               DateTime         @default(now()) @db.Timestamptz
+  personal               Personal?
+  consentimientos        Consentimiento[]
+  afiliaciones           Afiliacion[]
+  movimientosRegistrados Movimiento[]     @relation("MovimientoRegistradoPor")
+  movimientosAnulados    Movimiento[]     @relation("MovimientoAnuladoPor")
+  pagosRegistrados       Pago[]           @relation("PagoRegistradoPor")
+  pagosAnulados          Pago[]           @relation("PagoAnuladoPor")
+  bitacoras              Bitacora[]
+}
+
+// Administrador u operario ligado a su parqueadero (HU-01, HU-38)
+model Personal {
+  id            String      @id @default(uuid()) @db.Uuid
+  usuarioId     String      @unique @db.Uuid
+  parqueaderoId String      @db.Uuid
+  creadoEn      DateTime    @default(now()) @db.Timestamptz
+  usuario       Usuario     @relation(fields: [usuarioId], references: [id])
+  parqueadero   Parqueadero @relation(fields: [parqueaderoId], references: [id])
+
+  @@index([parqueaderoId])
+}
+
+// HU-35
+model Consentimiento {
+  id              String   @id @default(uuid()) @db.Uuid
+  usuarioId       String   @db.Uuid
+  versionPolitica String
+  aceptadoEn      DateTime @default(now()) @db.Timestamptz
+  usuario         Usuario  @relation(fields: [usuarioId], references: [id])
+}
+
+// Solo la mensualidad del cliente (sin rol)
+model Afiliacion {
+  id                 String              @id @default(uuid()) @db.Uuid
+  parqueaderoId      String              @db.Uuid
+  usuarioId          String?             @db.Uuid
+  estado             EstadoAfiliacion    @default(PENDIENTE_VINCULACION)
+  nombreTitular      String
+  telefonoTitular    String
+  creadoEn           DateTime            @default(now()) @db.Timestamptz
+  parqueadero        Parqueadero         @relation(fields: [parqueaderoId], references: [id])
+  usuario            Usuario?            @relation(fields: [usuarioId], references: [id])
+  vinculosVehiculo   VinculoVehiculo[]
+  codigosVinculacion CodigoVinculacion[]
+  pagos              Pago[]
+
+  @@index([parqueaderoId])
+}
+
+// Tabla de express-session (#30). Prisma la conoce para no borrarla.
+model Session {
+  sid    String   @id
+  sess   Json
+  expire DateTime @db.Timestamp(6)
+
+  @@index([expire])
+  @@map("session")
+}
+
+// ─── Parqueadero ───
+
+model Parqueadero {
+  id                 String              @id @default(uuid()) @db.Uuid
+  nombre             String
+  direccion          String
+  creadoEn           DateTime            @default(now()) @db.Timestamptz
+  personal           Personal[]
+  celdas             Celda[]
+  tarifas            Tarifa[]
+  movimientos        Movimiento[]
+  afiliaciones       Afiliacion[]
+  vehiculos          Vehiculo[]
+  dispositivos       Dispositivo[]
+  bitacoras          Bitacora[]
+  vinculosVehiculo   VinculoVehiculo[]
+  codigosVinculacion CodigoVinculacion[]
+  codigosQr          CodigoQr[]
+  pagos              Pago[]
+}
+
+model Celda {
+  id            String       @id @default(uuid()) @db.Uuid
+  parqueaderoId String       @db.Uuid
+  codigo        String
+  tipoPermitido TipoCelda
+  estado        EstadoCelda  @default(LIBRE)
+  parqueadero   Parqueadero  @relation(fields: [parqueaderoId], references: [id])
+  movimientos   Movimiento[]
+
+  @@unique([parqueaderoId, codigo])
+}
+
+// HU-09: tarifa versionada y por tipo de vehículo
+model Tarifa {
+  id               String       @id @default(uuid()) @db.Uuid
+  parqueaderoId    String       @db.Uuid
+  tipoVehiculo     TipoVehiculo
+  valorHora        Decimal      @db.Decimal(10, 2)
+  valorDia         Decimal      @db.Decimal(10, 2)
+  valorMensualidad Decimal      @db.Decimal(10, 2)
+  vigenteDesde     DateTime     @db.Timestamptz
+  vigenteHasta     DateTime?    @db.Timestamptz
+  creadoEn         DateTime     @default(now()) @db.Timestamptz
+  parqueadero      Parqueadero  @relation(fields: [parqueaderoId], references: [id])
+  movimientos      Movimiento[]
+  pagos            Pago[]
+
+  @@index([parqueaderoId, tipoVehiculo])
+}
+
+model Vehiculo {
+  id            String            @id @default(uuid()) @db.Uuid
+  parqueaderoId String            @db.Uuid
+  placa         String
+  tipo          TipoVehiculo
+  parqueadero   Parqueadero       @relation(fields: [parqueaderoId], references: [id])
+  vinculos      VinculoVehiculo[]
+  codigosQr     CodigoQr[]
+  movimientos   Movimiento[]
+
+  @@unique([parqueaderoId, placa])
+}
+
+model VinculoVehiculo {
+  id            String      @id @default(uuid()) @db.Uuid
+  parqueaderoId String      @db.Uuid
+  afiliacionId  String      @db.Uuid
+  vehiculoId    String      @db.Uuid
+  fechaInicio   DateTime    @db.Timestamptz
+  fechaFin      DateTime?   @db.Timestamptz
+  parqueadero   Parqueadero @relation(fields: [parqueaderoId], references: [id])
+  afiliacion    Afiliacion  @relation(fields: [afiliacionId], references: [id])
+  vehiculo      Vehiculo    @relation(fields: [vehiculoId], references: [id])
+}
+
+// HU-12b, HU-13, HU-17
+model CodigoVinculacion {
+  id               String      @id @default(uuid()) @db.Uuid
+  parqueaderoId    String      @db.Uuid
+  afiliacionId     String      @db.Uuid
+  hashCodigo       String
+  intentosFallidos Int         @default(0)
+  venceEn          DateTime    @db.Timestamptz
+  usadoEn          DateTime?   @db.Timestamptz
+  invalidadoEn     DateTime?   @db.Timestamptz
+  creadoEn         DateTime    @default(now()) @db.Timestamptz
+  parqueadero      Parqueadero @relation(fields: [parqueaderoId], references: [id])
+  afiliacion       Afiliacion  @relation(fields: [afiliacionId], references: [id])
+}
+
+model CodigoQr {
+  id            String         @id @default(uuid()) @db.Uuid
+  parqueaderoId String         @db.Uuid
+  vehiculoId    String         @db.Uuid
+  token         String         @unique
+  estado        EstadoCodigoQr @default(ACTIVO)
+  emitidoEn     DateTime       @default(now()) @db.Timestamptz
+  revocadoEn    DateTime?      @db.Timestamptz
+  parqueadero   Parqueadero    @relation(fields: [parqueaderoId], references: [id])
+  vehiculo      Vehiculo       @relation(fields: [vehiculoId], references: [id])
+}
+
+// ─── Operación y cobro ───
+
+model Movimiento {
+  id              String           @id @default(uuid()) @db.Uuid
+  parqueaderoId   String           @db.Uuid
+  celdaId         String           @db.Uuid
+  tarifaId        String           @db.Uuid
+  vehiculoId      String?          @db.Uuid
+  registradoPorId String           @db.Uuid
+  dispositivoId   String?          @db.Uuid
+  placa           String
+  tipoVehiculo    TipoVehiculo
+  codigoTiquete   String?          @unique
+  origen          OrigenMovimiento
+  entradaEn       DateTime         @default(now()) @db.Timestamptz
+  salidaEn        DateTime?        @db.Timestamptz
+  valorCobrado    Decimal?         @db.Decimal(10, 2)
+  // HU-22: anulación y corrección
+  anulado         Boolean          @default(false)
+  motivoAnulacion String?
+  anuladoEn       DateTime?        @db.Timestamptz
+  anuladoPorId    String?          @db.Uuid
+  corrigeAId      String?          @unique @db.Uuid
+  parqueadero     Parqueadero      @relation(fields: [parqueaderoId], references: [id])
+  celda           Celda            @relation(fields: [celdaId], references: [id])
+  tarifa          Tarifa           @relation(fields: [tarifaId], references: [id])
+  vehiculo        Vehiculo?        @relation(fields: [vehiculoId], references: [id])
+  registradoPor   Usuario          @relation("MovimientoRegistradoPor", fields: [registradoPorId], references: [id])
+  anuladoPor      Usuario?         @relation("MovimientoAnuladoPor", fields: [anuladoPorId], references: [id])
+  dispositivo     Dispositivo?     @relation(fields: [dispositivoId], references: [id])
+  corrigeA        Movimiento?      @relation("CorreccionMovimiento", fields: [corrigeAId], references: [id])
+  correccion      Movimiento?      @relation("CorreccionMovimiento")
+
+  @@index([parqueaderoId])
+}
+
+model Pago {
+  id              String      @id @default(uuid()) @db.Uuid
+  parqueaderoId   String      @db.Uuid
+  afiliacionId    String      @db.Uuid
+  tarifaId        String      @db.Uuid
+  registradoPorId String      @db.Uuid
+  monto           Decimal     @db.Decimal(10, 2)
+  medioPago       MedioPago
+  fechaPago       DateTime    @db.Timestamptz
+  periodoDesde    DateTime    @db.Timestamptz
+  periodoHasta    DateTime    @db.Timestamptz
+  creadoEn        DateTime    @default(now()) @db.Timestamptz
+  // HU-47: anulación
+  anulado         Boolean     @default(false)
+  motivoAnulacion String?
+  anuladoEn       DateTime?   @db.Timestamptz
+  anuladoPorId    String?     @db.Uuid
+  parqueadero     Parqueadero @relation(fields: [parqueaderoId], references: [id])
+  afiliacion      Afiliacion  @relation(fields: [afiliacionId], references: [id])
+  tarifa          Tarifa      @relation(fields: [tarifaId], references: [id])
+  registradoPor   Usuario     @relation("PagoRegistradoPor", fields: [registradoPorId], references: [id])
+  anuladoPor      Usuario?    @relation("PagoAnuladoPor", fields: [anuladoPorId], references: [id])
+
+  @@index([parqueaderoId])
+}
+
+model Dispositivo {
+  id            String       @id @default(uuid()) @db.Uuid
+  parqueaderoId String       @db.Uuid
+  nombre        String
+  hashClave     String
+  activo        Boolean      @default(true)
+  parqueadero   Parqueadero  @relation(fields: [parqueaderoId], references: [id])
+  movimientos   Movimiento[]
+}
+
+// Solo anexión (RNF-07): la bitácora nunca se actualiza, solo se inserta.
+// parqueaderoId opcional: un login fallido no tiene parqueadero (HU-46).
+model Bitacora {
+  id            String       @id @default(uuid()) @db.Uuid
+  parqueaderoId String?      @db.Uuid
+  usuarioId     String?      @db.Uuid
+  accion        String
+  entidad       String
+  detalle       Json
+  creadoEn      DateTime     @default(now()) @db.Timestamptz
+  parqueadero   Parqueadero? @relation(fields: [parqueaderoId], references: [id])
+  usuario       Usuario?     @relation(fields: [usuarioId], references: [id])
+
+  @@index([parqueaderoId])
 }
