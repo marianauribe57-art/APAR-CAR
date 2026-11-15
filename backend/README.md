@@ -56,8 +56,25 @@ API de APAR-CAR hecha con Node.js + Express + Prisma (PostgreSQL en Neon).
 
    <http://localhost:3000/api/health>
 
+## Usuarios de demo (solo `aparcar-dev`)
+
+Se crean con:
+
+```bash
+npx prisma db seed
+```
+
+| Rol | Correo | Contraseña |
+| --- | --- | --- |
+| Administrador | `admin@aparcar.demo` | `Demo.Aparcar1` |
+| Operario | `operario@aparcar.demo` | `Demo.Aparcar1` |
+| Cliente | `cliente@aparcar.demo` | `Demo.Aparcar1` |
+
+- Son contraseñas **solo de demo**: nunca las uses en una cuenta real.
+- Si una cuenta queda bloqueada por intentos fallidos, vuelve a correr el seed y se desbloquea.
+
 ## Notas
 
-- La configuración de Prisma está en `prisma7.config.ts` (no en `prisma.config.ts`).
+- La configuración de Prisma está en `prisma.config.ts`.
   Prisma la encuentra sola, no hace falta pasar `--config`.
 - El schema está en `prisma/schema.prisma`.
