@@ -7,6 +7,8 @@ import MiCuenta from './pages/MiCuenta';
 import NoEncontrada from './pages/NoEncontrada';
 import Operacion from './pages/Operacion';
 import Panel from './pages/Panel';
+import RegistroAdministrador from './pages/RegistroAdministrador';
+import RegistroCliente from './pages/RegistroCliente';
 import RedireccionInicio from './rutas/RedireccionInicio';
 import RutaProtegida from './rutas/RutaProtegida';
 
@@ -16,6 +18,8 @@ function App() {
       <Routes>
         <Route path="/" element={<RedireccionInicio />} />
         <Route path="/auth" element={<InicioSesion />} />
+        <Route path="/auth/registro-administrador" element={<RegistroAdministrador />} />
+        <Route path="/auth/registro-cliente" element={<RegistroCliente />} />
 
         <Route element={<RutaProtegida roles={['ADMINISTRADOR']} />}>
           <Route element={<LayoutPrincipal />}>

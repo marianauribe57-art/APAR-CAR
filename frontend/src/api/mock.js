@@ -38,13 +38,15 @@ export async function iniciarSesion({ correo, contrasena }) {
   const usuario = usuarios.find((u) => u.correo === correo.trim().toLowerCase());
 
   if (usuario?.correo === 'bloqueado@demo.com') {
-    throw new ErrorApi(423, { mensaje: 'Cuenta bloqueada', minutosRestantes: 14 });
+    throw new ErrorApi(423, { error: 'CUENTA_BLOQUEADA', mensaje: 'Cuenta bloqueada', minutosRestantes: 14 });
   }
-  if (!usuario || contrasena !== CONTRASENA_DEMO) {
-    throw new ErrorApi(401, { mensaje: 'Credenciales inválidas' });
+  if (!usuario || contrasena !== (usuario.contrasena ?? CONTRASENA_DEMO)) {
+    throw new ErrorApi(401, { error: 'CREDENCIALES_INVALIDAS', mensaje: 'Credenciales inválidas' });
   }
-  guardarSesion(usuario);
-  return { usuario };
+  const sinContrasena = { ...usuario };
+  delete sinContrasena.contrasena;
+  guardarSesion(sinContrasena);
+  return { usuario: sinContrasena };
 }
 
 export async function cerrarSesion() {
@@ -56,25 +58,47 @@ export async function cerrarSesion() {
 export async function obtenerSesion() {
   await espera(150);
   const usuario = leerSesion();
-  if (!usuario) throw new ErrorApi(401, { mensaje: 'Sin sesión' });
+  if (!usuario) throw new ErrorApi(401, { error: 'SIN_SESION', mensaje: 'Sin sesión' });
   return { usuario };
 }
 
-function registrar(datos, rol) {
+// Campos obligatorios (decisión de PO: teléfono en ambos registros y
+// dirección del parqueadero en el de administrador)
+const OBLIGATORIOS_CLIENTE = ['nombre', 'correo', 'contrasena', 'telefono', 'versionPolitica'];
+const OBLIGATORIOS_ADMINISTRADOR = [
+  ...OBLIGATORIOS_CLIENTE,
+  'nombreParqueadero',
+  'direccionParqueadero',
+];
+
+function registrar(datos, rol, obligatorios) {
+  const faltante = obligatorios.find((campo) => !String(datos[campo] ?? '').trim());
+  if (faltante) {
+    throw new ErrorApi(400, { error: 'DATOS_INVALIDOS', mensaje: `Falta el campo ${faltante}` });
+  }
+  if (datos.aceptaPolitica !== true) {
+    throw new ErrorApi(400, { error: 'DATOS_INVALIDOS', mensaje: 'Debes aceptar la política de datos' });
+  }
   const correo = datos.correo.trim().toLowerCase();
   if (usuarios.some((u) => u.correo === correo)) {
-    throw new ErrorApi(409, { mensaje: 'El correo ya está registrado' });
+    throw new ErrorApi(409, { error: 'CORREO_REGISTRADO', mensaje: 'El correo ya está registrado' });
   }
-  usuarios.push({ id: usuarios.length + 1, nombre: datos.nombre, correo, rol });
+  usuarios.push({
+    id: usuarios.length + 1,
+    nombre: datos.nombre,
+    correo,
+    rol,
+    contrasena: datos.contrasena, // solo en el mock, para poder iniciar sesión después
+  });
   return { mensaje: 'Cuenta creada' };
 }
 
 export async function registrarAdministrador(datos) {
   await espera();
-  return registrar(datos, 'ADMINISTRADOR');
+  return registrar(datos, 'ADMINISTRADOR', OBLIGATORIOS_ADMINISTRADOR);
 }
 
 export async function registrarCliente(datos) {
   await espera();
-  return registrar(datos, 'CLIENTE');
+  return registrar(datos, 'CLIENTE', OBLIGATORIOS_CLIENTE);
 }
