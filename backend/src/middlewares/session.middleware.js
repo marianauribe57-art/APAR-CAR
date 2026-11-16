@@ -18,7 +18,7 @@ export function requiereRol(...rolesPermitidos) {
     try {
       const usuario = await prisma.usuario.findUnique({
         where: { id: req.session.usuario.id },
-        select: { rol: true, activo: true },
+        select: { rol: true, activo: true, debeCambiarContrasena: true },
       });
 
       if (!usuario || !usuario.activo) {
@@ -26,6 +26,14 @@ export function requiereRol(...rolesPermitidos) {
         return res.status(401).json({
           error: 'SIN_SESION',
           mensaje: 'Debes iniciar sesión.',
+        });
+      }
+
+      // HU-38: mientras no cambie la contraseña inicial, solo puede ir al primer ingreso
+      if (usuario.debeCambiarContrasena) {
+        return res.status(403).json({
+          error: 'CAMBIO_CONTRASENA_REQUERIDO',
+          mensaje: 'Antes de seguir, acepta la política y cambia tu contraseña.',
         });
       }
 
