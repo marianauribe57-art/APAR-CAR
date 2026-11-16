@@ -1,22 +1,22 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
-import Campo from './Campo.jsx';
-import CasillaPolitica from './CasillaPolitica.jsx';
+import { useState } from "react";
+import { Link, useNavigate } from "react-router";
+import Campo from "./Campo.jsx";
+import CasillaPolitica from "./CasillaPolitica.jsx";
 import {
   LARGO_MINIMO_CONTRASENA,
   VERSION_POLITICA,
   mensajeErrorGeneral,
   validarRegistro,
-} from './validacion.js';
+} from "./validacion.js";
 
 const DATOS_INICIALES = {
-  nombre: '',
-  apellido: '',
-  correo: '',
-  contrasena: '',
-  telefono: '',
-  nombreParqueadero: '',
-  direccionParqueadero: '',
+  nombre: "",
+  apellido: "",
+  correo: "",
+  contrasena: "",
+  telefono: "",
+  nombreParqueadero: "",
+  direccionParqueadero: "",
   aceptaPolitica: false, // HU-35: sin marcar por defecto
 };
 
@@ -25,18 +25,23 @@ export default function FormularioRegistro({ esAdministrador, registrar }) {
   const navegar = useNavigate();
   const [datos, setDatos] = useState(DATOS_INICIALES);
   const [errores, setErrores] = useState({});
-  const [errorApi, setErrorApi] = useState('');
+  const [errorApi, setErrorApi] = useState("");
+  const [correoRepetido, setCorreoRepetido] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
   const cambiar = (evento) => {
     const { name, type, value, checked } = evento.target;
-    setDatos((anterior) => ({ ...anterior, [name]: type === 'checkbox' ? checked : value }));
+    setDatos((anterior) => ({
+      ...anterior,
+      [name]: type === "checkbox" ? checked : value,
+    }));
     setErrores((anterior) => ({ ...anterior, [name]: undefined }));
   };
 
   const enviar = async (evento) => {
     evento.preventDefault();
-    setErrorApi('');
+    setErrorApi("");
+    setCorreoRepetido(false);
     const nuevosErrores = validarRegistro(datos, { esAdministrador });
     setErrores(nuevosErrores);
     if (Object.keys(nuevosErrores).length > 0) return;
@@ -58,12 +63,20 @@ export default function FormularioRegistro({ esAdministrador, registrar }) {
     setEnviando(true);
     try {
       await registrar(cuerpo);
-      navegar('/auth', {
+      navegar("/auth", {
         replace: true,
-        state: { aviso: 'Cuenta creada. Ya puedes iniciar sesión.', correo: cuerpo.correo },
+        state: {
+          aviso: "Cuenta creada. Ya puedes iniciar sesión.",
+          correo: cuerpo.correo,
+        },
       });
     } catch (error) {
+      // 400: el backend dice qué campo falló → se muestra debajo de cada uno
+      if (error?.estado === 400 && error.datos?.campos) {
+        setErrores(error.datos.campos);
+      }
       setErrorApi(mensajeErrorGeneral(error));
+      setCorreoRepetido(error?.estado === 409);
     } finally {
       setEnviando(false);
     }
@@ -74,6 +87,18 @@ export default function FormularioRegistro({ esAdministrador, registrar }) {
       {errorApi && (
         <div className="alert alert-danger" role="alert">
           {errorApi}
+          {correoRepetido && (
+            <div className="mt-2">
+              <Link to="/auth">Inicia sesión</Link> o{" "}
+              <button
+                type="button"
+                className="btn btn-link p-0 align-baseline"
+                title="Disponible próximamente"
+              >
+                recupera tu contraseña
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -153,8 +178,12 @@ export default function FormularioRegistro({ esAdministrador, registrar }) {
         error={errores.aceptaPolitica}
       />
 
-      <button type="submit" className="btn btn-primary w-100 py-2" disabled={enviando}>
-        {enviando ? 'Creando cuenta…' : 'Crear cuenta'}
+      <button
+        type="submit"
+        className="btn btn-primary w-100 py-2"
+        disabled={enviando}
+      >
+        {enviando ? "Creando cuenta…" : "Crear cuenta"}
       </button>
 
       <p className="text-center mt-4 mb-0">
