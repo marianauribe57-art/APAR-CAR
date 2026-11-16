@@ -1,4 +1,4 @@
-import { iniciarSesion } from '../services/auth.service.js';
+import { iniciarSesion, registrarAdministrador, registrarCliente } from '../services/auth.service.js';
 import { aplicarDuracionPorRol } from '../config/sesion.js';
 
 // regenerate() funciona con callback; esto lo convierte en promesa para poder usar await
@@ -41,4 +41,27 @@ export async function postIniciarSesion(req, res) {
 // GET /api/auth/sesion: si no hay sesión, requiereSesion ya respondió 401
 export function getSesion(req, res) {
   res.json({ usuario: req.session.usuario });
+}
+
+// Después del registro NO se inicia sesión: la persona va al login (plan del día 2)
+function responderRegistro(res, resultado) {
+  if (resultado.status !== 201) {
+    return res.status(resultado.status).json(resultado.cuerpo);
+  }
+  res.status(201).json({
+    usuario: resultado.usuario,
+    mensaje: 'Cuenta creada. Ya puedes iniciar sesión.',
+  });
+}
+
+// POST /api/auth/registro-administrador (HU-01)
+export async function postRegistroAdministrador(req, res) {
+  const resultado = await registrarAdministrador(req.body ?? {}, { ip: req.ip });
+  responderRegistro(res, resultado);
+}
+
+// POST /api/auth/registro-cliente (HU-02)
+export async function postRegistroCliente(req, res) {
+  const resultado = await registrarCliente(req.body ?? {}, { ip: req.ip });
+  responderRegistro(res, resultado);
 }

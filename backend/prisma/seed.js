@@ -2,10 +2,10 @@
 // Uso: npx prisma db seed   (solo contra aparcar-dev, nunca contra la base de TICS)
 import { prisma } from '../src/config/prisma.js';
 import { hashearContrasena } from '../src/services/seguridad.service.js';
+import { VERSION_POLITICA } from '../src/config/politica.js';
 
 // Contraseña SOLO de demo, nunca una real
 const CONTRASENA_DEMO = 'Demo.Aparcar1';
-const VERSION_POLITICA = 'v1';
 
 // Id fijo: Parqueadero no tiene un campo único, así el upsert siempre lo encuentra
 const ID_PARQUEADERO_DEMO = '00000000-0000-4000-8000-000000000001';
