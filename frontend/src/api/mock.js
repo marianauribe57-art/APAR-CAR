@@ -64,7 +64,7 @@ export async function obtenerSesion() {
 
 // Campos obligatorios (decisión de PO: teléfono en ambos registros y
 // dirección del parqueadero en el de administrador)
-const OBLIGATORIOS_CLIENTE = ['nombre', 'correo', 'contrasena', 'telefono', 'versionPolitica'];
+const OBLIGATORIOS_CLIENTE = ['nombre', 'apellido', 'correo', 'contrasena', 'telefono', 'versionPolitica'];
 const OBLIGATORIOS_ADMINISTRADOR = [
   ...OBLIGATORIOS_CLIENTE,
   'nombreParqueadero',
@@ -85,7 +85,7 @@ function registrar(datos, rol, obligatorios) {
   }
   usuarios.push({
     id: usuarios.length + 1,
-    nombre: datos.nombre,
+    nombre: `${datos.nombre} ${datos.apellido}`,
     correo,
     rol,
     contrasena: datos.contrasena, // solo en el mock, para poder iniciar sesión después

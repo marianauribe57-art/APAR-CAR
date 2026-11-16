@@ -10,6 +10,7 @@ export const VERSION_POLITICA = '1.0';
 export function validarRegistro(datos, { esAdministrador }) {
   const errores = {};
   if (!datos.nombre.trim()) errores.nombre = 'Escribe tu nombre.';
+  if (!datos.apellido.trim()) errores.apellido = 'Escribe tu apellido.';
   if (!CORREO.test(datos.correo.trim())) errores.correo = 'Escribe un correo válido.';
   if (datos.contrasena.length < LARGO_MINIMO_CONTRASENA) {
     errores.contrasena = `La contraseña debe tener al menos ${LARGO_MINIMO_CONTRASENA} caracteres.`;

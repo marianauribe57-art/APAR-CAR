@@ -11,6 +11,7 @@ import {
 
 const DATOS_INICIALES = {
   nombre: '',
+  apellido: '',
   correo: '',
   contrasena: '',
   telefono: '',
@@ -42,6 +43,7 @@ export default function FormularioRegistro({ esAdministrador, registrar }) {
 
     const cuerpo = {
       nombre: datos.nombre.trim(),
+      apellido: datos.apellido.trim(),
       correo: datos.correo.trim().toLowerCase(),
       contrasena: datos.contrasena,
       telefono: datos.telefono.trim(),
@@ -77,11 +79,19 @@ export default function FormularioRegistro({ esAdministrador, registrar }) {
 
       <Campo
         id="nombre"
-        etiqueta="Nombre completo"
-        autoComplete="name"
+        etiqueta="Nombre"
+        autoComplete="given-name"
         value={datos.nombre}
         onChange={cambiar}
         error={errores.nombre}
+      />
+      <Campo
+        id="apellido"
+        etiqueta="Apellido"
+        autoComplete="family-name"
+        value={datos.apellido}
+        onChange={cambiar}
+        error={errores.apellido}
       />
       <Campo
         id="correo"
