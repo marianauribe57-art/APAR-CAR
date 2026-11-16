@@ -1,22 +1,17 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router";
-import Campo from "./Campo.jsx";
-import CasillaPolitica from "./CasillaPolitica.jsx";
-import {
-  LARGO_MINIMO_CONTRASENA,
-  VERSION_POLITICA,
-  mensajeErrorGeneral,
-  validarRegistro,
-} from "./validacion.js";
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router';
+import Campo from './Campo.jsx';
+import CasillaPolitica from './CasillaPolitica.jsx';
+import { LARGO_MINIMO_CONTRASENA, mensajeErrorGeneral, validarRegistro } from './validacion.js';
 
 const DATOS_INICIALES = {
-  nombre: "",
-  apellido: "",
-  correo: "",
-  contrasena: "",
-  telefono: "",
-  nombreParqueadero: "",
-  direccionParqueadero: "",
+  nombre: '',
+  apellido: '',
+  correo: '',
+  contrasena: '',
+  telefono: '',
+  nombreParqueadero: '',
+  direccionParqueadero: '',
   aceptaPolitica: false, // HU-35: sin marcar por defecto
 };
 
@@ -25,7 +20,7 @@ export default function FormularioRegistro({ esAdministrador, registrar }) {
   const navegar = useNavigate();
   const [datos, setDatos] = useState(DATOS_INICIALES);
   const [errores, setErrores] = useState({});
-  const [errorApi, setErrorApi] = useState("");
+  const [errorApi, setErrorApi] = useState('');
   const [correoRepetido, setCorreoRepetido] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
@@ -33,14 +28,14 @@ export default function FormularioRegistro({ esAdministrador, registrar }) {
     const { name, type, value, checked } = evento.target;
     setDatos((anterior) => ({
       ...anterior,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === 'checkbox' ? checked : value,
     }));
     setErrores((anterior) => ({ ...anterior, [name]: undefined }));
   };
 
   const enviar = async (evento) => {
     evento.preventDefault();
-    setErrorApi("");
+    setErrorApi('');
     setCorreoRepetido(false);
     const nuevosErrores = validarRegistro(datos, { esAdministrador });
     setErrores(nuevosErrores);
@@ -53,7 +48,6 @@ export default function FormularioRegistro({ esAdministrador, registrar }) {
       contrasena: datos.contrasena,
       telefono: datos.telefono.trim(),
       aceptaPolitica: datos.aceptaPolitica,
-      versionPolitica: VERSION_POLITICA,
     };
     if (esAdministrador) {
       cuerpo.nombreParqueadero = datos.nombreParqueadero.trim();
@@ -63,10 +57,10 @@ export default function FormularioRegistro({ esAdministrador, registrar }) {
     setEnviando(true);
     try {
       await registrar(cuerpo);
-      navegar("/auth", {
+      navegar('/auth', {
         replace: true,
         state: {
-          aviso: "Cuenta creada. Ya puedes iniciar sesión.",
+          aviso: 'Cuenta creada. Ya puedes iniciar sesión.',
           correo: cuerpo.correo,
         },
       });
@@ -89,13 +83,9 @@ export default function FormularioRegistro({ esAdministrador, registrar }) {
           {errorApi}
           {correoRepetido && (
             <div className="mt-2">
-              <Link to="/auth">Inicia sesión</Link> o{" "}
-              <button
-                type="button"
-                className="btn btn-link p-0 align-baseline"
-                title="Disponible próximamente"
-              >
-                recupera tu contraseña
+              <Link to="/auth">Inicia sesión</Link> o{' '}
+              <button type="button" className="btn btn-link p-0 align-baseline" disabled>
+                recupera tu contraseña (próximamente)
               </button>
             </div>
           )}
@@ -178,12 +168,8 @@ export default function FormularioRegistro({ esAdministrador, registrar }) {
         error={errores.aceptaPolitica}
       />
 
-      <button
-        type="submit"
-        className="btn btn-primary w-100 py-2"
-        disabled={enviando}
-      >
-        {enviando ? "Creando cuenta…" : "Crear cuenta"}
+      <button type="submit" className="btn btn-primary w-100 py-2" disabled={enviando}>
+        {enviando ? 'Creando cuenta…' : 'Crear cuenta'}
       </button>
 
       <p className="text-center mt-4 mb-0">

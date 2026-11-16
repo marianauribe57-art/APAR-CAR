@@ -3,9 +3,6 @@ const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TELEFONO = /^[0-9+\s-]{7,15}$/;
 export const LARGO_MINIMO_CONTRASENA = 8;
 
-// Versión de la política de tratamiento de datos que acepta el usuario (HU-35).
-// Confirmar el valor con el equipo; el backend la guarda junto con la aceptación.
-export const VERSION_POLITICA = '1.0';
 
 export function validarRegistro(datos, { esAdministrador }) {
   const errores = {};
