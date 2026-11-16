@@ -1,7 +1,7 @@
 import { solicitar, ErrorApi } from './cliente.js';
 import * as mock from './mock.js';
 
-// Día 2: borrar esta constante, el import de mock y las líneas "if (USAR_MOCK)"
+// Solo para los registros: se borra en el PR de conectar-registro (#34 #35 #36)
 const USAR_MOCK = true;
 
 const extraerUsuario = (datos) => datos?.usuario ?? datos;
@@ -17,21 +17,21 @@ export async function registrarCliente(datos) {
 }
 
 export async function iniciarSesion({ correo, contrasena }) {
-  const datos = USAR_MOCK
-    ? await mock.iniciarSesion({ correo, contrasena })
-    : await solicitar('/api/auth/iniciar-sesion', { metodo: 'POST', cuerpo: { correo, contrasena } });
+  const datos = await solicitar('/api/auth/iniciar-sesion', {
+    metodo: 'POST',
+    cuerpo: { correo, contrasena },
+  });
   return extraerUsuario(datos);
 }
 
 export async function cerrarSesion() {
-  if (USAR_MOCK) return mock.cerrarSesion();
   return solicitar('/api/auth/cerrar-sesion', { metodo: 'POST' });
 }
 
 // Devuelve el usuario o null si no hay sesión
 export async function obtenerSesion() {
   try {
-    const datos = USAR_MOCK ? await mock.obtenerSesion() : await solicitar('/api/auth/sesion');
+    const datos = await solicitar('/api/auth/sesion');
     return extraerUsuario(datos);
   } catch (error) {
     if (error instanceof ErrorApi && error.estado === 401) return null;
