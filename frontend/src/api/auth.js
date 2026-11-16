@@ -19,13 +19,13 @@ export async function registrarCliente(datos) {
 export async function iniciarSesion({ correo, contrasena }) {
   const datos = USAR_MOCK
     ? await mock.iniciarSesion({ correo, contrasena })
-    : await solicitar('/api/auth/login', { metodo: 'POST', cuerpo: { correo, contrasena } });
+    : await solicitar('/api/auth/iniciar-sesion', { metodo: 'POST', cuerpo: { correo, contrasena } });
   return extraerUsuario(datos);
 }
 
 export async function cerrarSesion() {
   if (USAR_MOCK) return mock.cerrarSesion();
-  return solicitar('/api/auth/logout', { metodo: 'POST' });
+  return solicitar('/api/auth/cerrar-sesion', { metodo: 'POST' });
 }
 
 // Devuelve el usuario o null si no hay sesión

@@ -23,7 +23,7 @@ export function registrarManejadorSesionInvalida(manejador) {
 }
 
 // En estas rutas un 401 es una respuesta esperada, no una sesión vencida
-const RUTAS_SIN_REDIRECCION = ['/api/auth/login', '/api/auth/sesion'];
+const RUTAS_SIN_REDIRECCION = ['/api/auth/iniciar-sesion', '/api/auth/sesion'];
 
 async function leerJson(respuesta) {
   try {
