@@ -4,6 +4,7 @@ import { useSesion } from '../contexto/sesion.js';
 const enlaces = [
   { ruta: '/panel', texto: 'Panel de control' },
   { ruta: '/estacionamientos', texto: 'Estacionamientos' },
+  { ruta: '/celdas', texto: 'Celdas' },
 ];
 
 function LayoutPrincipal() {
