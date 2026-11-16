@@ -62,6 +62,14 @@ export async function solicitar(ruta, { metodo = 'GET', cuerpo } = {}) {
     ) {
       manejadorSesionInvalida();
     }
+    // HU-38: el operario todavía no cambia su contraseña inicial -> al primer ingreso
+    if (
+      respuesta.status === 403 &&
+      datos?.error === 'CAMBIO_CONTRASENA_REQUERIDO' &&
+      window.location.pathname !== '/primer-ingreso'
+    ) {
+      window.location.assign('/primer-ingreso');
+    }
     // 403 y 423 llegan como ErrorApi; cada pantalla decide qué mostrar
     throw new ErrorApi(respuesta.status, datos);
   }
