@@ -7,8 +7,8 @@ function NoEncontrada() {
       <p className="fs-5 my-4">
         La dirección que escribiste no existe en APAR-CAR.
       </p>
-      <Link to="/panel" className="btn btn-primary btn-lg">
-        Volver al panel de control
+      <Link to="/" className="btn btn-primary btn-lg">
+        Volver al inicio
       </Link>
     </div>
   );

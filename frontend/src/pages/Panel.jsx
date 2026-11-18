@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
+import { useSesion } from '../contexto/sesion.js';
 
 function Panel() {
+  const { usuario } = useSesion();
   const [estado, setEstado] = useState('Consultando...');
 
   useEffect(() => {
@@ -18,6 +20,7 @@ function Panel() {
   return (
     <div className="container mt-5">
       <h1 className="text-primary">Panel de control</h1>
+      <p className="fs-5">Hola, {usuario.nombre} </p>
       <p>Estado del servidor: <strong>{estado}</strong></p>
     </div>
   );
